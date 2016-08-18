@@ -1,0 +1,27 @@
+<suite name="webdriver" parallel="methods">
+		
+	<test name="Test in IE" preserve-order="false">
+		<parameter name="browser" value="IE">
+			<classes>
+				<class name="Project_Uses.Multi_Browser"/>
+			</classes>
+		</parameter>
+	</test>
+	
+	<test name="Test in Chrome">
+		<parameter name="browser" value="CRM">
+			<classes>
+				<class name="Project_Uses.Multi_Browser"/>
+			</classes>
+		</parameter>
+	</test>
+	
+	<test name="Test in Mozilla">
+		<parameter name="browser" value="FFX">
+			<classes>
+				<class name="Project_Uses.Multi_Browser"/>
+			</classes>
+		</parameter>
+	</test>
+	
+</suite>
