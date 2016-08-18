@@ -1,0 +1,31 @@
+package Project_Uses;
+
+public class DateValidation 
+{
+	
+	public static void main(String[] args) {
+		validateDateFormat("07-20-1992");
+	}
+	public static boolean validateDateFormat(String date){
+        StringBuffer sBuffer = new StringBuffer(date);
+        String mon;
+        String dd;
+        String year;
+
+        // Store the Date in String Buffer and Break down the date
+        mon = sBuffer.substring(0,2);
+        dd = sBuffer.substring(3,5);
+        year = sBuffer.substring(6,10);
+        System.out.println("DD: "+ dd + " Mon: "+ mon + " Year: "+ year);
+
+        // Validating Date Format for Tunr In Date and Live Date to be MM/dd/yyyy
+        if(mon.matches("0[1-9]|1[0-2]") && dd.matches("0[1-9]|[12][0-9]|3[01]") 
+                && year.matches("(19|20)\\d\\d")){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+}
