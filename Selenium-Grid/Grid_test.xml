@@ -1,0 +1,43 @@
+
+<suite name="Suite" verbose="1" thread-count="3" parallel="tests">
+
+	<tests>
+		<test name="Windows+ie">
+			<parameters>
+				<parameter name="platform" value="windows" />
+				<parameter name="browser" value="ie" />
+				<parameter name="url" value="https://www.google.co.in" />
+			</parameters>
+			
+			<classes>
+				<class name="Grid.GridTest"/>
+			</classes>
+		</test> 
+		
+		<test name="Windows+chrome">
+			<parameters>
+				<parameter name="platform" value="windows"/>
+				<parameter name="browser" value="chrome"/>
+				<parameter name="url" value="https://www.google.co.in"/>
+			</parameters>
+			
+			<classes>
+				<class name="Grid.GridTest"/>
+			</classes>
+		</test>
+		
+		<test name="windows+firefox Test">
+			<parameters>
+				<parameter name="platform" value="windows" />
+				<parameter name="browser" value="Firefox" />
+				<parameter name="url" value="https://www.google.co.in" />
+			</parameters>
+
+			<classes>
+				<class name="Grid.GridTest" />
+			</classes>
+		</test> <!-- Test -->
+
+	</tests>
+
+</suite> <!-- Suite -->
