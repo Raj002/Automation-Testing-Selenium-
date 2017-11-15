@@ -1,0 +1,226 @@
+
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.KeyEvent;
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.NoSuchElementException;
+
+import org.openqa.selenium.Alert;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoAlertPresentException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+
+import com.TEAFramework.Technology.ExcelXlsFileRead;
+import com.TEAFramework.Technology.UIMethods;
+
+
+public class Helper 
+{
+	private static WebDriver driver = null;
+	public WebDriverWait wait;
+	public Alert alert;
+	String projectdir = System.getProperty("user.dir");
+	ExcelXlsFileRead xlsread = new ExcelXlsFileRead(projectdir+"\\src\\test\\resources\\input\\SAM_Testdata.xls");
+	
+	public Helper(WebDriver driver)
+	{
+		this.driver = driver;
+		wait = new WebDriverWait(driver, 60);
+	}
+	
+	/**
+	 * This method will generate date based on the given count
+	 * @param count - 0 means today, 1 means tomorrow, -1 means yesterday in similar way we will give the count
+	 */
+	public String getDate(int count)
+	{
+		Calendar calendar = Calendar.getInstance();		  
+		calendar.add(Calendar.DATE, count);
+		Date date = calendar.getTime();
+		Format formatter = new SimpleDateFormat("MM/dd/yyyy");
+		String tomorrowDate = formatter.format(date);				
+		return tomorrowDate;
+	}
+	
+	/**
+	 * This will generate date time stamp based on the given count
+	 * @param count - 0 means today, 1 means tomorrow, -1 means yesterday in similar way we will give the count
+	 */
+	public String getDateTimeStamp(int count)
+	{
+		Calendar calendar = Calendar.getInstance();		  
+		calendar.add(Calendar.DATE, count);
+		Date date = calendar.getTime();
+		Format formatter = new SimpleDateFormat("MM/dd/yyyy/hh:mm:ss");
+		String tomorrowDate = formatter.format(date);				
+		return tomorrowDate;
+	}
+	
+	/**
+	 * Checks if the element is in DOM and click on the element. You may use this method when you are not able to click on element by using selenium locators. It will go and search in DOM level using javascriptExecutor
+	 * @param element - The element which you are going to click on the page
+	 */
+	public static void clickAt_XLocation(WebElement element)throws Exception
+	{
+		JavascriptExecutor script = ((JavascriptExecutor)driver);
+		script.executeScript("arguments[0].click()", element);
+		element.click();
+		//UIMethods.clickbyWebElement(element, "Click on Log Out Link", "Click");
+		Thread.sleep(2000);
+	}
+	
+	/**
+	 * Checks if the alert is in the DOM, regardless of being displayed or not
+	 */
+	public boolean isAlertPresent() 
+	{ 
+	    try 
+	    { 
+	        driver.switchTo().alert(); 
+	        return true; 
+	    } 
+	    catch (NoAlertPresentException Ex) 
+	    { 
+	        return false; 
+	    }   
+	}  
+	
+	/**
+	 * @return Get text from alert.
+	 */
+	public String getAlertText() {
+		final Alert alert = this.driver.switchTo().alert();
+		return alert.getText();
+	}
+
+	/**
+	 * Accept alert.
+	 */
+	public void acceptAlert() {
+		final Alert alert = this.driver.switchTo().alert();
+		alert.accept();
+	}
+
+	/**
+	 * Cancel alert.
+	 */
+	public void dismissAlert() {
+		final Alert alert = this.driver.switchTo().alert();
+		alert.dismiss();
+	}
+	
+	public void waitUntilDocIsReady(int waitTime)
+	{
+		new WebDriverWait(driver, waitTime).until((ExpectedCondition<Boolean>) wd ->
+		((JavascriptExecutor) wd).executeScript("return document.readyState").equals("complete"));
+	}
+	
+	/**
+	 * This method can be used to check whether page is loaded completely whenever you navigate to the new page
+	 * It will wait for the given waitTime in Milisecond and will keep checking the page condition . will return
+	 * true if loaded and returning the page status as complete or if not loaded the it will throw the error as fails and will
+	 * 
+	 */	
+	public boolean waitForPageTOLoadCompletely(WebDriver driver, int waitTime) {
+
+	     ExpectedCondition<Boolean> expectation = new
+	     ExpectedCondition<Boolean>() {
+	        public Boolean apply(WebDriver driver) {
+	          return ((JavascriptExecutor)driver).executeScript("return document.readyState").equals("complete");
+	        }
+	      };
+     System.out.println("Page loaded values"+expectation);
+	     WebDriverWait wait = new WebDriverWait(driver,waitTime);
+	      try {
+	              wait.until(expectation);
+	              return true;
+	      } catch(Throwable error) {
+	              Assert.fail("Page is not loaded in 30 SECONDS ");
+	              return false;
+	      }
+	 }
+	
+	/**
+	 * Checks if the element is in the DOM, regardless of being displayed or not.
+	 * 
+	 * @param driver - The driver object to use to perform this element search
+	 * @param by - selector to find the element
+	 * @return boolean
+	 */
+	public boolean isElementPresent(By by) {
+		try {
+			driver.findElement(by);//if it does not find the element throw NoSuchElementException, which calls "catch(Exception)" and returns false; 
+			return true;
+		} catch (NoSuchElementException e) {
+			return false;
+		}
+	}
+	
+	/**
+	 * This method can be used to highlight the given element
+	 * @param driver - pass your WebDrver reference variable
+	 * @param element - The element which you are going to highlight
+	 * @throws InterruptedException 
+	 *
+	 */
+	public static void highLightElement(WebDriver driver, WebElement element) throws InterruptedException
+	{
+		for (int i = 0; i < 2; i++) {
+			JavascriptExecutor js = (JavascriptExecutor) driver;
+			js.executeScript("arguments[0].setAttribute('style', arguments[1]);", element,
+					"color: yellow; border: 2px solid yellow;");
+			Thread.sleep(1000);
+			js.executeScript("arguments[0].setAttribute('style', arguments[1]);", element, "");
+		}
+	}
+	
+	public void selectDropdownValue(WebElement element, String dropdownValue)
+	{
+		element.click();
+		Select se = new Select(element);
+		se.selectByVisibleText(dropdownValue);
+	}
+	
+	/**
+	 * This method can be used to enter  credentials in windows authentication pop up.
+	 * It uses Java Robot classes in order to enter credentials in windows authentication pop up.
+	 */
+	@SuppressWarnings("static-access")
+	public void enterCredentialsInAuthenticationWindow()throws Throwable
+	{
+		Robot robo = new Robot();
+		StringSelection userName = new StringSelection(xlsread.Exceldata("Login", "username", "Login")); 
+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(userName, null);
+		robo.keyPress(KeyEvent.VK_CONTROL);
+		robo.keyPress(KeyEvent.VK_V);
+		robo.keyRelease(KeyEvent.VK_V);
+		robo.keyRelease(KeyEvent.VK_CONTROL);
+		
+		robo.keyPress(KeyEvent.VK_TAB);
+		robo.keyRelease(KeyEvent.VK_TAB);
+		Thread.sleep(2000);
+		
+		StringSelection password = new StringSelection(xlsread.Exceldata("Login", "password", "Login"));
+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(password, null);
+		robo.keyPress(KeyEvent.VK_CONTROL);
+		robo.keyPress(KeyEvent.VK_V);
+		robo.keyRelease(KeyEvent.VK_V);
+		robo.keyRelease(KeyEvent.VK_CONTROL);
+		
+		robo.keyPress(KeyEvent.VK_ENTER);
+		robo.keyRelease(KeyEvent.VK_ENTER);
+		Thread.sleep(5000);
+	}
+	
+	
+}
