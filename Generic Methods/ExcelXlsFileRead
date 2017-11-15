@@ -1,0 +1,293 @@
+
+import java.io.File;
+import java.io.IOException;
+
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.log4j.Logger;
+
+import jxl.Cell;
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.format.Colour;
+import jxl.read.biff.BiffException;
+import jxl.write.Label;
+import jxl.write.WritableCellFormat;
+import jxl.write.WritableFont;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
+
+/**
+ * Modified by:  
+ */
+
+public class ExcelXlsFileRead {
+	
+	public static String excelFileName="";
+	private static final Logger LOG = Logger.getLogger(ExcelXlsFileRead.class);
+	private static int rowNum = 0;
+	
+	
+	public ExcelXlsFileRead(String fileName){		
+		excelFileName=fileName;
+	}
+	
+	/**
+	 * @DateCreated 02 July 2015 
+	 */
+	public static String Exceldata(String SheetName,String ColumnName,String rowId){
+		String op = null;
+		
+		try{
+			File inputworkbook=new File(excelFileName);		
+			Workbook workbook = null;		
+			workbook = Workbook.getWorkbook(inputworkbook);		
+			Sheet sheet=workbook.getSheet(SheetName);
+			int ii=0;
+			while(ii<=400)
+			{
+				String name=sheet.getCell(ii,0).getContents();
+				if(name.equals(ColumnName))
+				{
+					break;
+				}
+				ii++;
+			}
+			int jj=0;
+			while(jj<=400)
+			{
+				String name=sheet.getCell(0,jj).getContents();
+				
+				if(name.equals(rowId))
+				{
+					break;
+				}
+				jj++;
+			}
+			op = sheet.getCell(ii,jj).getContents();
+			workbook.close();
+			if(op.contains("Random")){
+				String []splitted = op.split(",");			
+				if(splitted[1].equals("Alphabet"))
+					op=RandomStringUtils.random(Integer.decode(splitted[2]), true, false);
+				else if(splitted[1].equals("Numeric"))
+					op=RandomStringUtils.random(Integer.decode(splitted[2]),false, true);
+				else if(splitted[1].equals("Alphanumeric"))
+					op=RandomStringUtils.random(Integer.decode(splitted[2]),true, true);
+				
+			}
+			if(op.equals("Empty"))
+				return null;
+			
+		
+		}catch(ArrayIndexOutOfBoundsException e){
+			System.out.println("");
+			LOG.debug("Required column header is not present in the Excel sheet " + e.getMessage(),e);		
+		} catch (BiffException e) {			
+			LOG.debug("Exception" + e.getMessage(),e);	
+		} catch (IOException e) {			
+			LOG.debug("Exception" + e.getMessage(),e);	
+		}
+		
+		return op;
+	}
+	
+	/**
+	 * @param SheetName
+	 */
+	public static int GetExcelRowcount(String SheetName){
+		
+		File exlFile = new File(excelFileName);
+		Workbook readabletableWorkbook = null;
+		try {
+			readabletableWorkbook = Workbook.getWorkbook(exlFile);
+			Sheet sheet = readabletableWorkbook.getSheet(SheetName);
+			rowNum = sheet.getRows();
+		} catch (BiffException | IOException e) {
+
+			rowNum = 1;
+		}
+		return rowNum;
+	}	
+	
+
+	/**
+	 * @param SheetName
+	 * @param columnName
+	 * @param data
+	 * @param rowId
+	 * @param status
+	 * @MethodName WriteIntoExistingExcel
+	 * @MethodDescription To write into 
+	 */
+	public static void WriteIntoExistingExcel(String SheetName,String columnName, String data, String rowId, boolean status) {
+		try {
+
+			File exlFile = new File(excelFileName);
+			WritableSheet getsht;
+			WritableWorkbook copy;
+			Workbook writableWorkbook = null;
+			writableWorkbook = Workbook.getWorkbook(exlFile);
+			copy = Workbook.createWorkbook(new File(excelFileName),writableWorkbook);
+			
+			getsht = copy.getSheet(SheetName);
+			int ii = 0;
+			while (ii <= 400) {
+				String name = getsht.getCell(ii, 0).getContents();
+				if (name.equals(columnName)) {
+					break;
+				}
+				ii++;
+			}
+			
+			int jj = 0;
+			while (jj <= 400) {
+				String name = getsht.getCell(0, jj).getContents();
+
+				if (name.equals(rowId)) {
+					break;
+				}
+				jj++;
+			}
+
+			//String op = getsht.getCell(ii, jj).getContents();	
+
+			WritableFont normalFont = new WritableFont(WritableFont.ARIAL, 10);
+			WritableCellFormat normalCell = new WritableCellFormat(normalFont);
+
+			Label label = new Label(ii, jj, data);
+
+			if (status == true) {
+				label.setCellFormat(normalCell);
+				normalCell.setBackground(Colour.LIGHT_GREEN);
+
+			} else {
+				label.setCellFormat(normalCell);
+				normalCell.setBackground(Colour.RED);
+			}
+			getsht.addCell(label);
+			copy.write();
+			copy.close();
+			writableWorkbook.close();
+
+		} catch (IOException e) {
+			LOG.debug("Catch Exception: " + e.getMessage(),e);		
+
+		} catch (BiffException e) {
+			
+			LOG.debug("Catch Exception: " + e.getMessage(),e);		
+		} catch (WriteException e) {
+			
+			LOG.debug("Catch Exception: " + e.getMessage(),e);		
+		}
+	}
+	
+	/**
+	 * @param SheetName, ColumnName, Data
+	 * @return rowid
+	 * @throws Exception 
+	 * @MethodName Exceldata (String SheetName, String ColumnName, String data)
+	 * @MethodDescription To get the row# against specified Column name string
+	 */
+	public int GetExcelRowid(String SheetName, String ColumnName, String data) throws Exception{
+		
+		File exlFile = new File(excelFileName);
+		Workbook readabletableWorkbook = null;
+		try {
+			readabletableWorkbook = Workbook.getWorkbook(exlFile);
+			Sheet sheet = readabletableWorkbook.getSheet(SheetName);
+			
+			int lastRow = sheet.getRows();
+			int lastCol = sheet.getColumns();
+			//String ve = sheet.getCell(column, row).getContents();
+			
+			int i = 0;
+			while (i <= lastCol){ 
+				if (sheet.getCell(i, 0).getContents().equals(ColumnName))
+				{
+					break;
+				}
+				i++;
+			}
+			
+			int j = 0;
+			while (j <= lastRow)
+			{
+				if (sheet.getCell(i, j).getContents().equals(data))
+				{
+					break;
+				}
+				j++;	
+			}
+			
+			return j;
+			
+		} catch (IOException e) {
+			LOG.debug("Catch Exception: " + e.getMessage(),e);		
+
+			
+		}
+		return rowNum;
+		
+
+	}
+	
+	
+	
+	/**
+	 * @param SheetName, ColumnName, Data
+	 * @return Row Value
+	 * @throws Exception 
+	 * @MethodName Exceldata (String SheetName, String ColumnName, Int Rowid)
+	 * @MethodDescription To get the row value
+	 */
+	public String Exceldata(String SheetName,String ColumnName, int rowId){
+		String op = null;
+		
+		try{
+			File inputworkbook=new File(excelFileName);		
+			Workbook workbook = null;		
+			workbook = Workbook.getWorkbook(inputworkbook);		
+			Sheet sheet=workbook.getSheet(SheetName);
+			int lastCol = sheet.getColumns();
+			int ii=0;
+			while(ii<=lastCol)
+			{
+				String name=sheet.getCell(ii,0).getContents();
+				if(name.equals(ColumnName))
+				{
+					break;
+				}
+				ii++;
+			}
+		
+			op = sheet.getCell(ii, rowId).getContents();
+			workbook.close();
+			if(op.contains("Random")){
+				String []splitted = op.split(",");			
+				if(splitted[1].equals("Alphabet"))
+					op=RandomStringUtils.random(Integer.decode(splitted[2]), true, false);
+				else if(splitted[1].equals("Numeric"))
+					op=RandomStringUtils.random(Integer.decode(splitted[2]),false, true);
+				else if(splitted[1].equals("Alphanumeric"))
+					op=RandomStringUtils.random(Integer.decode(splitted[2]),true, true);
+				
+			}
+			if(op.equals("Empty"))
+				return null;
+			
+		
+		}catch(ArrayIndexOutOfBoundsException e){
+			System.out.println("");
+			LOG.debug("Required column header is not present in the Excel sheet " + e.getMessage(),e);		
+		} catch (BiffException e) {			
+			LOG.debug("Exception" + e.getMessage(),e);	
+		} catch (IOException e) {			
+			LOG.debug("Exception" + e.getMessage(),e);	
+		}
+		
+		return op;
+	}
+	
+		
+}
