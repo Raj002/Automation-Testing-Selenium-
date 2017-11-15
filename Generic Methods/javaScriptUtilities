@@ -1,0 +1,75 @@
+
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoAlertPresentException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+public class javaScriptUtilities
+{
+	private WebDriver driver;
+	
+	public javaScriptUtilities(WebDriver driver)
+	{
+		this.driver = driver;
+	}
+	public void changeColorByJS(WebElement element,String color)
+	{
+		JavascriptExecutor javaScript = ((JavascriptExecutor)driver);
+		javaScript.executeScript("arguments[0].style.backgroundColor = '"+ color +"'",element);
+		try
+		{
+			Thread.sleep(1000);
+		}catch(InterruptedException e){			
+		}
+	}
+	
+	public void generateAlertByJS(String alertMessage) 
+	{
+		JavascriptExecutor javaScript = ((JavascriptExecutor)driver);
+		javaScript.executeScript("alert('"+alertMessage+"')");
+		try
+		{
+			Thread.sleep(2000);
+			driver.switchTo().alert().accept();
+		}
+		catch(NoAlertPresentException e)
+		{
+			e.printStackTrace();
+		}
+		catch(InterruptedException e)
+		{
+			e.printStackTrace();
+		}		
+	}
+	
+	public String getPageTitleByJS()
+	{
+		JavascriptExecutor javaScript = ((JavascriptExecutor)driver);
+		String pageTitle = javaScript.executeScript("return document.title;").toString();
+		return pageTitle;
+	}
+	
+	public void refreshBrowserWindowByJS()
+	{
+		JavascriptExecutor javaScript = ((JavascriptExecutor)driver);
+		javaScript.executeScript("history.go(0)");
+	}
+	
+	public void scrollIntoElementViewByJS(WebElement element)
+	{
+		JavascriptExecutor javaScript = ((JavascriptExecutor)driver);
+		javaScript.executeScript("arguments[0].scrollIntoVoew(true);", element);
+	}
+	
+	public void clickElementByJS(WebElement element)
+	{
+		JavascriptExecutor javaScript = ((JavascriptExecutor)driver);
+		javaScript.executeScript("arguments[0].click();",element);
+	}
+	
+	public void scrollPageDownByJS()
+	{
+		JavascriptExecutor javaScript = ((JavascriptExecutor)driver);
+		javaScript.executeScript("window.scrollTo(0,document.body.scrollHeight)");
+	}
+}
