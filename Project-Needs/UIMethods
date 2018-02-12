@@ -1,0 +1,1209 @@
+package com.qa.CICC.Technology;
+import java.awt.AWTException;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import javax.imageio.ImageIO;
+import org.apache.log4j.Logger;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.Platform;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.ui.Select;
+
+import com.google.common.base.Strings;
+
+
+public class UIMethods {
+
+	public static String browser;
+	public static WebDriver driver;
+	public static Logger LOG = Logger.getLogger(UIMethods.class);
+
+	/**
+	 * Launch the browser based on the input Available browser options 
+	 * GoogleChrome , IE, FireFox
+	 * 
+	 * @param tcId
+	 * @return
+	 * @throws MalformedURLException 
+	 * @throws IOException 
+	 */
+	public static WebDriver browser(String tcId) throws MalformedURLException  {
+		browser = tcId;
+
+		if (browser.equals("Mozilla")) {
+			driver = new FirefoxDriver();
+
+		} else if (browser.equals("IE")) {
+
+			//-------Enable the below setting to run the test in your Local---------------------
+			String strExecutionType = (FetchPropertiesFiles.executionMode).toString();
+			if (strExecutionType.equalsIgnoreCase("local")) {
+				System.setProperty("webdriver.ie.driver", FetchPropertiesFiles.ieWebdriverPath);
+				DesiredCapabilities capab = DesiredCapabilities.internetExplorer();
+				capab.setCapability(InternetExplorerDriver.INTRODUCE_FLAKINESS_BY_IGNORING_SECURITY_DOMAINS, true);
+				driver = new InternetExplorerDriver(capab);
+			}
+			//-------Enable the below setting to run test in Sauce Labs---------------------
+			else {
+				DesiredCapabilities capab = DesiredCapabilities.internetExplorer();
+				capab.setCapability("platform", "Windows 10");
+				capab.setCapability("version", "11");
+				capab.setCapability(InternetExplorerDriver.INTRODUCE_FLAKINESS_BY_IGNORING_SECURITY_DOMAINS, true);
+				capab.setCapability("introduceFlakinessByIgnoringProtectedModeSettings", true);
+				capab.setCapability(InternetExplorerDriver.IE_ENSURE_CLEAN_SESSION, true);
+				capab.setCapability("parent-tunnel", "LMSauceLabs");
+				capab.setCapability("tunnel-identifier", "nonprod");
+	//			capab.setCapability("javascriptEnabled", true);
+				capab.setCapability("nativeEvents", false);
+				capab.setCapability("ignoreZoomLevel", true);
+				capab.setCapability("acceptSslCerts", true);
+				capab.setCapability("unexpectedAlertBehaviour", "accept");
+				capab.setCapability("enablePersistentHover", true);
+				capab.setCapability("disable-popup-blocking", true);
+				capab.setCapability("name", "CICC-RegressionTest-GL");
+				capab.setCapability("build", "GL-RegressionTestBuild");
+				capab.setCapability("passed", "true");
+				driver = new RemoteWebDriver(new URL("http://sso-lm-Vishnupriya.Rajkumar:0e0f5115-ad50-4707-809a-c62f996bd610@saucelabs-nonprod.lmig.com/wd/hub"), capab);			
+			}
+		} 
+		
+		else if (browser.equals("Chrome")) {
+			//for running in local chrome browser
+			String path= FetchPropertiesFiles.chromeWebdriverPath;
+			System.setProperty("webdriver.chrome.driver", path);
+			@SuppressWarnings("unused")
+			DesiredCapabilities capabilities = DesiredCapabilities.chrome();
+			ChromeOptions chromeOptions = new ChromeOptions();
+			chromeOptions.addArguments("disable-extensions");
+			chromeOptions.addArguments("--start-maximized");
+			chromeOptions.addArguments("no-sandbox");
+			driver = new ChromeDriver(chromeOptions);
+		}
+		return driver;
+	}
+
+	/**
+	 * Verify Screen
+	 * 
+	 * @param fieldName
+	 * @param pageName
+	 * @return
+	 * @throws IOException 
+	 */
+	public static void PageVerification(WebElement element, String pageName) throws Exception{
+		
+		try {
+			boolean bool = element.isDisplayed();
+			Report.pass("Login Screen", "Page Verification", pageName + " screen should load successfully", pageName + " screen is loaded successfully");
+		} catch (Exception ex) {
+			Report.fail("Login Screen", "Page Verification", pageName + " screen should load successfully", pageName + " screen is not loaded successfully");
+		}
+	}
+	
+	/**
+	 * Maximize Browser window
+	 * 
+	 * @param browserName
+	 * @return
+	 * @throws IOException 
+	 */
+	public static String StartBrowser(String browserName) throws IOException {
+
+		driver = browser(browserName);
+		try {			
+			driver.manage().timeouts().implicitlyWait(4, TimeUnit.SECONDS);
+			if (!browserName.equals("Chrome"))
+				driver.manage().window().maximize();
+
+			driver.get(FetchPropertiesFiles.portalUrl);
+			Report.heading();
+			Report.pass("Application Launch", browserName, "Launch Browser",
+					"Application : \n" + FetchPropertiesFiles.portalUrl + "  is launched successfully");
+			LOG.info("Browser launch successfully");
+			Thread.sleep(5000);
+
+		} catch (Exception e) {
+
+			Report.fail("Application Launch", browserName, "Launch Browser",
+					"Application : \n" + FetchPropertiesFiles.portalUrl + "  is NOT launched");
+
+		}
+		browser = browserName;
+		return browser;
+	}
+	
+	/**
+	 * Maximize Browser window
+	 * 
+	 * @param browserName
+	 * @return
+	 */
+	public static String StartBrowser() {
+		try {
+			//Thread.sleep(30000);
+			driver.manage().timeouts().implicitlyWait(4, TimeUnit.SECONDS);
+			String url = (FetchPropertiesFiles.portalUrl).toString();
+			driver.get(url);
+			;
+
+			Report.heading();
+			Report.pass("Application Launch", "browserName", "Launch Browser",
+					"Application : \n" + FetchPropertiesFiles.portalUrl + "  is launched successfully");
+			LOG.info("Browser launch successfully");
+			Thread.sleep(5000);
+
+		} catch (Exception e) {
+
+			Report.fail("Application Launch", "browserName", "Launch Browser",
+					"Application : \n" + FetchPropertiesFiles.portalUrl + "  is NOT launched");
+		}
+		return browser;
+	}
+
+	/**
+	 * Restart Browser
+	 * Delete All the Cookies
+	 */
+	public static void restartBrowser() {	
+		
+		driver.manage().deleteAllCookies();
+		
+	}
+
+	/**
+	 * Stop Browser
+	 */
+	public static void stopBrowser() {
+
+		try {		
+			 driver.close();
+			 driver.quit();
+			 if(browser.equals("IE"))
+			 {
+				 Runtime.getRuntime().exec("taskkill /F /IM IEDriverServer.exe"); 
+			 } else if(browser.equals("Chrome")) {
+				 Runtime.getRuntime().exec("taskkill /F /IM chromedriver.exe");
+			 }
+	    } catch (Exception anException) {
+	    	System.out.println("Killed process");
+	       // anException.printStackTrace();
+	    }	
+	} 
+	
+	public static void quitBrowser() {
+		try {		
+			 driver.quit();
+			 if(browser.equals("IE"))
+			 {
+				 Runtime.getRuntime().exec("taskkill /F /IM IEDriverServer.exe"); 
+			 } else if(browser.equals("Chrome")) {
+				 Runtime.getRuntime().exec("taskkill /F /IM chromedriver.exe");
+			 }
+	    } catch (Exception anException) {
+	    	System.out.println("Killed process");
+	       // anException.printStackTrace();
+	    }	
+	}
+
+	/**
+	 * Take screenshot of the particular screen Image will be stored in JPEG
+	 * Format Image fill will be named n ObjectName
+	 * 
+	 * @param objectName
+	 * @param description
+	 * @param tcID
+	 */
+	public static String takeSnapshot(String objectName, String description, String tcID) {
+
+		Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+		BufferedImage capture;
+		String fileName= null;
+
+		try {
+			capture = new Robot().createScreenCapture(screenRect);
+			System.out.println(Report.folderPath + "//" + tcID + "//" + UtilityMethods.sytemDate("MM_dd_YYYY_HHmmss")  + ".jpeg");
+			ImageIO.write(capture, "jpeg", new File(Report.folderPath + "//" + tcID + "//" +UtilityMethods.sytemDate("MM_dd_YYYY_HHmmss")  + ".jpeg"));
+			Report.passSnapshot(description, objectName, "Screenshot", "Snapshot Captured");
+			fileName = Report.folderPath + "//" + tcID + "//"  +UtilityMethods.sytemDate("MM_dd_YYYY_HHmmss")  + ".jpeg";
+		} catch (IOException e) {
+
+			Report.fail(description, objectName, "Screenshot", "FAILED to take screenshot");
+		} catch (AWTException e) {
+
+			Report.fail(description, objectName, "Screenshot ", "FAILED to take screenshot");
+		}
+		return fileName; 
+
+	}
+
+	/**
+	 * Take screenshot of the particular screen Image will be stored in JPEG
+	 * Format Image fill will be named n ObjectName
+	 * 
+	 * @param objectName
+	 * @param description
+	 * @param tcID
+	 */
+	public static void takeSnapshotForFailures(String objectName, String description, String tcID) {
+
+		Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+		BufferedImage capture;
+		try {
+
+			capture = new Robot().createScreenCapture(screenRect);
+			System.out.println(Report.folderPath + "//" + tcID + "//" + UtilityMethods.sytemDate("MM_dd_YYYY_HHmmss") + ".jpeg");
+			File file = new File(Report.folderPath + "//" + tcID + "//" + UtilityMethods.sytemDate("MM_dd_YYYY_HHmmss") + ".jpeg");
+			System.out.println(file.getAbsolutePath());
+			ImageIO.write(capture, "jpeg", file);
+			Report.passSnapshot(description, objectName, "Screenshot", "Snapshot Captured");
+
+		} catch (IOException | AWTException e) {
+			
+			Report.fail(description, objectName, "Screenshot", "FAILED to take screenshot \n" + e.getMessage());
+
+		}
+	}
+
+	/**
+	 * Check Element presence in portal
+	 * 
+	 * @param objects
+	 * @param description
+	 */
+	@SuppressWarnings("deprecation")
+	public static void checkElement(By objects, String description, String testData) {
+
+		int waitCounter = 0;
+		java.util.Date date = new java.util.Date();
+		Timestamp t1 = new Timestamp(date.getTime());
+		boolean flag = false;
+
+		do {
+			try {
+				flag = driver.findElement(objects).isEnabled();
+				System.out.println("Element found");
+				break;
+			} catch (Exception e) {
+
+			}
+
+			date = new java.util.Date();
+			Timestamp timeCounter = new Timestamp(date.getTime());
+			waitCounter = t1.getMinutes() - timeCounter.getMinutes();
+			if (Math.abs(waitCounter) >= 1) {
+
+				Report.fail(description, objects + "", testData, objects + " is NOT found in the Portal");
+				break;
+			}
+		} while (flag != false);
+	}
+
+	/**
+	 * Click the given ID object
+	 * 
+	 * @param objects
+	 * @param description
+	 */
+	public static boolean clickbyid(String objects, String description, String testData) {
+
+		boolean boolReturn = false;
+		for (int i=1; i<=1; i++) {
+			//Exit if data is Empty
+			if (testData == "") break;
+			
+			try {
+	
+				int count = driver.findElements(By.id(objects)).size();
+				if (count == 1) {
+					driver.findElement(By.id(objects)).click();
+					Report.pass(description, objects, "Click " + testData, testData + " is Clicked");
+					boolReturn = true;
+				} else {
+					Report.fail(description, objects, "Click " + testData, testData + " is NOT Clicked");
+					boolReturn = false;
+				}
+	
+			} catch (Exception e) {
+	
+				Report.fail(description,  objects, "Click " + testData, objects + " is NOT FOUND" + e);
+				checkElement(By.id(objects), "ASdasdas", "Asdasds");
+				boolReturn = false;
+			}
+		}
+		
+		return boolReturn;
+	}
+
+	
+	/**
+	 * Select by ID added to handle drop down values. While running in Sauce lab alone this method required
+	 */
+	
+	public static void selectbyid(String objects, String description, String testData) {
+        for (int i=1; i<=1; i++) {
+               //Exit if data is Empty
+               if (testData == "" || testData == null) break;
+               try {
+                     int count = driver.findElements(By.id(objects)).size();
+                     if (count == 1) {
+                            
+                            Select ddlSelect = new Select(driver.findElement(By.id(objects)));
+                            ddlSelect.selectByVisibleText(testData); 
+                            Report.pass(description, objects, "Select " + testData, testData + " is Selected");
+                     } else {
+                            Report.fail(description, objects, "Select " + testData, testData + " is NOT Selected");
+                     }
+               } catch (Exception e) {
+                     Report.fail(description, objects, "Select " + testData, objects + " is NOT FOUND\n" + e);
+               }
+        }
+ }
+	
+	
+public static void  selectListbyid (String objects, String description, String testData) throws InterruptedException {		
+		
+
+		if (!Strings.isNullOrEmpty(testData)){	
+			
+			WebElement input = driver.findElement(By.id(objects));
+			boolean exists = input.isDisplayed();
+			String[] objectNameArray;
+
+			if (exists){
+				//input.clear();
+				input.sendKeys(Keys.END);
+				Thread.sleep(500);
+				input.sendKeys("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+				Thread.sleep(1000);
+				input.sendKeys(testData);
+				Thread.sleep(1000);
+				try {
+					//WebElement clickOption = driver.findElement(By.xpath("//li[@role='option' and text()='" + testData.trim() + "']"));
+					WebElement clickOption = driver.findElement(By.xpath("//li[@role='option' and contains(text(),'" + testData.trim() + "')]"));
+					clickOption.click();	
+					Report.pass(description, objects, "Select " + testData, testData + " is Selected");
+				} catch (Exception e) {
+					//selectList(input, option);
+					 Report.fail(description, objects, "Select " + testData, objects + " is NOT FOUND\n" + e);
+				}
+
+				Thread.sleep(500);
+
+			}else{
+				Report.fail(description, objects, "Select " + testData, testData + " is NOT Selected");
+			}	
+		}	
+	}
+	
+	/**
+	 * Select by XPATH added to handle drop down values. While running in Sauce lab alone this method required
+	 */
+	
+	public static void selectbyxpath(String objects, String description, String testData) {
+        for (int i=1; i<=1; i++) {
+               //Exit if data is Empty
+               if (testData == "" || testData == null) break;
+               try {
+                     int count = driver.findElements(By.xpath(objects)).size();
+                     if (count == 1) {
+                            
+                            Select ddlSelect = new Select(driver.findElement(By.xpath(objects)));
+                            ddlSelect.selectByVisibleText(testData); 
+                            Report.pass(description, objects, "Select " + testData, testData + " is Selected");
+                     } else {
+                            Report.fail(description, objects, "Select " + testData, testData + " is NOT Selected");
+                     }
+               } catch (Exception e) {
+                     Report.fail(description, objects, "Select " + testData, objects + " is NOT FOUND\n" + e);
+               }
+        }
+ }
+	
+	/**
+	 * Click the given Name object
+	 * 
+	 * @param objects
+	 * @param description
+	 */
+	public static void clickbyname(String objects, String description, String testData) {
+		try {
+			int count = driver.findElements(By.name(objects)).size();
+			if (count == 1) {
+				driver.findElement(By.name(objects)).click();
+				Report.pass(description, objects, "Click " + testData, testData + " is Clicked");
+			} else {
+				Report.fail(description, objects, "Click " + testData, testData + " is NOT Clicked");
+			}
+
+		} catch (Exception e) {
+			Report.fail(description, objects, "Click " + testData, objects + " is NOT FOUND \n" + e);
+		}
+	}
+
+	/**
+	 * Click the given Xpath object
+	 * 
+	 * @param objects
+	 * @param description
+	 */
+	public static boolean clickbyxpath(String objects, String description, String testData) {
+		
+		boolean boolReturn = false;
+		for (int i=1; i<=1; i++) {
+			//Exit if data is Empty
+			if (testData == "") break;
+			try {
+				Thread.sleep(2000);
+				int count = driver.findElements(By.xpath(objects)).size();
+				System.out.println(count);
+				if (count >= 1) {
+					driver.findElement(By.xpath(objects)).click();
+					Report.pass(description, objects, "Click " + testData, testData + " is Clicked");
+					boolReturn= true;
+				} else {
+					//Report.fail(description, objects, "Click " + testData, testData + " is NOT Clicked");
+					boolReturn= false;
+				}
+				
+	
+			} catch (Exception e) {
+				Report.warn(description, objects, "Click " + testData, objects + " is NOT FOUND\n" + e);
+				boolReturn= false;
+			}
+		}
+		return boolReturn;
+	}
+	
+
+	/**
+	 * JaveScriptClick by given Xpath object
+	 * 
+	 * @param objects
+	 * @param description
+	 */
+	public static boolean jscriptclickbyxpath(String objects, String description, String testData) {
+		
+		boolean boolReturn = false;
+		for (int i=1; i<=1; i++) {
+			//Exit if data is Empty
+			if (testData == "") break;
+			
+			try {
+				Thread.sleep(2000);
+				int count = driver.findElements(By.xpath(objects)).size();
+				System.out.println(count);
+				if (count >= 1) {
+					
+					WebElement chose = driver.findElement(By.xpath(objects));
+					JavascriptExecutor js = (JavascriptExecutor)driver;
+			        js.executeScript("arguments[0].click();", chose);
+					Report.pass(description, objects, "Java Script Click " + testData, testData + " is Clicked");
+					boolReturn = true;
+				} else {
+					//Report.fail(description, objects, "Click " + testData, testData + " is NOT Clicked");
+					boolReturn = false;
+				}
+				
+	
+			} catch (Exception e) {
+				Report.warn(description, objects, "Click " + testData, objects + " is NOT FOUND\n" + e);
+				boolReturn = false;
+			}
+		}
+		
+		return boolReturn;
+	}
+
+	/**
+	 * Click the given CSS Selector object
+	 * 
+	 * @param objects
+	 * @param description
+	 */
+	public static void clickbyCssSelector(String objects, String description, String testData) {
+		try {
+			Thread.sleep(2000);
+			int count = driver.findElements(By.cssSelector(objects)).size();
+			if (count == 1) {
+				driver.findElement(By.cssSelector(objects)).click();
+				Report.pass(description, objects, "Click " + testData, testData + " is Clicked");
+			} else {
+				Report.fail(description, objects, "Click " + testData, testData + " is NOT Clicked");
+			}
+
+		} catch (Exception e) {
+			Report.fail(description, objects, "Click " + testData, objects + " is NOT FOUND \n" + e);
+		}
+	}
+
+	/**
+	 * Click the given LinkText object
+	 * 
+	 * @param objects
+	 * @param description
+	 */
+	public static void clickbylinktext(String objects, String description, String testData) {
+		try {
+			int count = driver.findElements(By.linkText(objects)).size();
+			if (count == 1) {
+				driver.findElement(By.linkText(objects)).click();
+				Report.pass(description, objects, "Click " + testData, testData + " is Clicked");
+
+			} else {
+				Report.fail(description, objects, "Click " + testData, testData + " is NOT Clicked");
+			}
+
+		} catch (Exception e) {
+			Report.fail(description, objects, "Click " + testData, objects + " is NOT FOUND \n" + e);
+		}
+	}
+
+	/**
+	 * Click the given WeElement object
+	 * 
+	 * @param objects
+	 * @param description
+	 */
+	public static void clickbyWebElement(WebElement element, String description, String testData) {
+		String objects = element.toString();
+		try {
+			Thread.sleep(2000);
+			if (element.isEnabled()) {
+				element.click();
+				Report.pass(description, objects, "Click " + testData, testData + " is Clicked");
+			} else {
+				Report.fail(description, objects, "Click " + testData, testData + " is NOT Clicked");
+			}
+
+		} catch (Exception e) {
+
+			Report.fail(description, objects, "Click " + testData, objects + " is NOT FOUND \n" + e);
+		}
+	}
+
+	/**
+	 * Double Click the given Web Element object
+	 * 
+	 * @param element
+	 * @param description
+	 * @param testData
+	 */
+	public static void doubleClickbyWebElement(WebElement element, String description, String testData) {
+		String objects = element.toString();
+		try {
+
+			Thread.sleep(2000);
+			if (element.isEnabled()) {
+				Actions action = new Actions(driver);
+				action.doubleClick(element).perform();
+
+				Report.pass(description, objects, "Click " + testData, testData + " is Clicked");
+			} else {
+
+				Report.fail(description, objects, "Click " + testData, testData + " is NOT Clicked");
+			}
+
+		} catch (Exception e) {
+
+			Report.fail(description, objects, "Click " + testData, testData + " is NOT FOUND \n" + e);
+		}
+	}
+
+	/**
+	 * Clear the field for given ID Object
+	 * 
+	 * @param objects
+	 * @param description
+	 * @param testData
+	 */
+	public static void clearAndInputbyid(String objects, String description, String testData) {
+		for (int i=1; i<=1; i++) {
+					
+			//Exit if data is Empty
+			if (testData == "") break;
+			try {
+				int count = driver.findElements(By.id(objects)).size();
+				if (count == 1) {
+					driver.findElement(By.id(objects)).clear();
+					driver.findElement(By.id(objects)).sendKeys(testData);
+	
+					Report.pass(description, objects, "Clear and Enter Data", testData + "  Entered \\ Cleared");
+				} else {
+					Report.fail(description, objects, "Clear and Enter Data", testData + " is NOT Entered");
+				}
+	
+			} catch (Exception e) {
+	
+				Report.fail(description, objects, "Clear Data " + testData, objects + " is NOT FOUND \n" + e);
+			}
+		}
+	}
+
+	/**
+	 * Clear the field for given Xpath Object
+	 * 
+	 * @param objects
+	 * @param description
+	 * @param testData
+	 */
+	public static void clearAndinputbyxpath(String objects, String description, String testData) {
+		try {
+			int count = driver.findElements(By.xpath(objects)).size();
+			if (count >= 1) {
+				driver.findElement(By.xpath(objects)).clear();
+				driver.findElement(By.xpath(objects)).sendKeys(testData);
+				Report.pass(description, objects, "Clear and Enter Data", testData + " is Entered");
+			} else {
+
+				Report.fail(description, objects, "Clear and Enter Data", testData + " is NOT Entered");
+			}
+
+		} catch (Exception e) {
+
+			Report.fail(description, objects, "Clear Data " + testData, objects + " is NOT FOUND \n" + e);
+		}
+	}
+
+	/**
+	 * Clear the field for given Xpath Object
+	 * 
+	 * @param objects
+	 * @param description
+	 * @param testData
+	 */
+	public static void clearAndinputbyCssSelector(String objects, String description, String testData) {
+		try {
+			int count = driver.findElements(By.cssSelector(objects)).size();
+			if (count == 1) {
+				driver.findElement(By.cssSelector(objects)).clear();
+				driver.findElement(By.cssSelector(objects)).sendKeys(testData);
+				Report.pass(description, objects, "Clear and Enter Data", testData + " is Entered");
+
+			} else {
+				Report.fail(description, objects, "Clear and Enter Data", testData + " is NOT Entered");
+			}
+
+		} catch (Exception e) {
+
+			Report.fail(description, objects, "Clear Data " + testData, objects + " is NOT FOUND \n" + e);
+		}
+	}
+	
+	/**
+	 * Input data in the given WeElement object
+	 * 
+	 * @param objects
+	 * @param description
+	 */
+	public static void inputbyWebElement(WebElement element, String description, String testData) {
+		String objects = element.toString();
+		try {
+			Thread.sleep(2000);
+			if (element.isEnabled()) {
+				element.sendKeys(testData);
+				Report.pass(description, objects, "Enter " + testData, testData + " is Entered");
+			} else {
+				Report.fail(description, objects, "Enter " + testData, testData + " is NOT Entered");
+			}
+
+		} catch (Exception e) {
+
+			Report.fail(description, objects, "Enter " + testData, objects + " is NOT FOUND\n" + e);
+		}
+	}
+
+	/**
+	 * Enter the given value of the ID Object
+	 * 
+	 * @param objects
+	 * @param description
+	 * @param testData
+	 */
+	public static void inputbyid(String objects, String description, String testData) {
+		for (int i=1; i<=1; i++) {
+			//Exit if data is Empty
+			if (testData == "" || testData == null) break;
+			try {
+				int count = driver.findElements(By.id(objects)).size();
+				if (count == 1) {
+					driver.findElement(By.id(objects)).sendKeys(testData);
+	
+					Report.pass(description, objects, "Enter " + testData, testData + " is Entered");
+				} else {
+					Report.fail(description, objects, "Enter " + testData, testData + " is NOT Entered");
+				}
+			} catch (Exception e) {
+				Report.fail(description, objects, "Enter " + testData, objects + " is NOT FOUND\n" + e);
+			}
+		}
+	}
+
+	
+	/**
+	 * Enter the given value of the Name Object
+	 * 
+	 * @param objects
+	 * @param description
+	 * @param testData
+	 */
+	public static void inputbyname(String objects, String description, String testData) {
+		try {
+			int count = driver.findElements(By.name(objects)).size();
+			if (count == 1) {
+				driver.findElement(By.name(objects)).sendKeys(testData);
+				Report.pass(description, objects, "Enter " + testData, testData + " is Entered");
+			} else {
+
+				Report.fail(description, objects, "Enter " + testData, testData + " is NOT Entered");
+			}
+
+		} catch (Exception e) {
+
+			Report.fail(description, objects, "Enter " + testData, objects + " is NOT FOUND\n" + e);
+		}
+	}
+
+	/**
+	 * Enter the given value of the XPath Object
+	 * 
+	 * @param objects
+	 * @param description
+	 * @param testData
+	 */
+	public static void inputbyxpath(String objects, String description, String testData) {
+		
+		for (int i=1; i<=1; i++) {
+			
+			//Exit if data is Empty
+			if (testData == "") break;
+			try {
+				int count = driver.findElements(By.xpath(objects)).size();
+				if (count == 1) {
+					driver.findElement(By.xpath(objects)).sendKeys(testData);
+					Report.pass(description, objects, "Enter " + testData, testData + " is Entered");
+				} else {
+					Report.fail(description, objects, "Enter " + testData, testData + " is NOT Entered");
+				}
+	
+			} catch (Exception e) {
+				Report.fail(description, objects, "Enter " + testData, objects + " is NOT FOUND\n" + e);
+			}
+		}
+	}
+
+	/**
+	 * Select value in drop down  object using Xpath
+	 * @param objects
+	 * @param description
+	 * @param testData
+	 */
+	public static void DropboxSelectXpath(String objects, String description, String testData) {
+		try {
+			int count = driver.findElements(By.xpath(objects)).size();
+			if (count == 1) {
+
+				String dropText = driver.findElement(By.xpath(objects)).getText();
+				String[] drop = objects.split("/option");
+				UtilityFunctions.waitUntilSelectOptionPupulated(new Select(driver.findElement(By.xpath(drop[0]))), driver);
+				new Select(driver.findElement(By.xpath(drop[0]))).selectByVisibleText(dropText);
+
+				Report.pass(description, objects, "Select "+ testData, "Test data " + testData + " is selected ");
+			} else {
+
+				Report.fail(description, objects, "Select "+ testData, "Test data " + testData + " is NOT selected ");
+			}
+
+		} catch (Exception e) {
+
+			Report.fail(description, objects, "Select "+ testData, "Test data " + testData + " is NOT FOUND \n"+e);
+		}
+	}
+
+	/**
+	 * Select value in drop down  object using Xpath
+	 * @param objects
+	 * @param description
+	 * @param testData
+	 */
+	public static void DropSelectbyID(String objects, String description, String testData) {
+		try {
+
+			int count = driver.findElements(By.id(objects)).size();
+			if (count == 1) {
+				UtilityFunctions.waitUntilSelectOptionPupulated(new Select(driver.findElement(By.id(objects))),driver);
+				new Select(driver.findElement(By.id(objects))).selectByVisibleText(testData);
+				Report.pass(description, objects, "Select "+ testData, "Test data " + testData + " is selected ");
+				
+			} else {
+				Report.fail(description, objects, "Select "+ testData, "Test data " + testData + " is NOT selected ");
+			}
+
+		} catch (Exception e) {
+
+			Report.fail(description, objects, "Select "+ testData, "Test data " + testData + " is NOT FOUND \n"+e);
+		}
+	}
+
+
+
+	/**
+	 * Get the TEXT of an WebElement using Span Tag
+	 * @param divId
+	 * @param testData
+	 * @return
+	 */
+	public static String getSpanValueUsingID(String description, String divId, String testData) {
+
+		String spanValue = "";
+		boolean flag= false;
+		try {
+			
+			WebElement division = driver.findElement(By.id(divId));
+			List<WebElement> span = division.findElements(By.tagName("span"));
+			for (WebElement row : span) {
+
+				if (row.getText().contains(testData)) {
+					
+					spanValue = row.getText().toString();
+					flag=true;
+					break;
+				}
+			}
+			if(flag==true){
+				Report.pass(description, divId, "Get Value "+ testData, spanValue + " is Fetched ");
+			}else{
+				Report.fail(description, divId, "Get Value "+ testData, spanValue + " is NOT Fetched ");
+			}
+			
+		} catch (Exception e) {
+			
+			Report.fail(description, divId, "Get Value "+ testData, spanValue + " is NOT FOUND \n "+e);
+		}
+		
+		return spanValue;
+	}
+
+	/**
+	 * Click an WebElement using Span Tag
+	 * @param divId
+	 * @param testData
+	 * @return
+	 */
+	public static String clickSpanValueUsingID(String description,String divId, String testData) {
+
+		String spanValue = "";
+		boolean flag= false;
+		try {
+			
+			WebElement division = driver.findElement(By.id(divId));
+			List<WebElement> span = division.findElements(By.tagName("span"));
+			for (WebElement row : span) {
+
+				if (row.getText().contains(testData)) {
+
+					Actions action = new Actions(driver);
+					action.click(row).perform();
+					flag=true;
+					System.out.println("Done Clicked");
+					break;
+				}
+			}
+			
+			if(flag==true){
+				Report.pass(description, divId, "Click "+ testData, testData + " is Clicked ");
+			}else{
+				//Report.fail(description, divId, "Click "+ testData, testData + " is NOT Clicked");
+			}
+			
+		} catch (Exception e) {
+			
+			Report.fail(description, divId, "Click "+ testData, testData + " is NOT FOUND \n "+e);
+		}
+		
+		return spanValue;
+	}
+
+	/**
+	 * Select an WebElement using Span Tag
+	 * @param divId
+	 * @param testData
+	 * @return
+	 */
+	public static String selectSpanValueUsingID(String divId, String description, String testData) {
+
+		String spanValue = "";
+		boolean flag= false;
+		try {
+
+			WebElement division = driver.findElement(By.id(divId));
+			WebElement temp = null;
+			List<WebElement> select = division.findElements(By.tagName("select"));
+			for (WebElement row : select) {
+				temp = row;
+
+				List<WebElement> option = row.findElements(By.tagName("option"));
+
+				for (WebElement value : option) {
+
+					if (testData.equals(value.getText())) {
+						new Select(temp).selectByVisibleText(testData);
+						flag=true;
+						System.out.println("Selection is Done");
+						break;
+					}
+				}
+
+			}
+			
+			if(flag==true){
+				Report.pass(description, divId, "Select "+ testData, testData + " is Selected ");
+			}
+			
+		} catch (Exception e) {
+
+			Report.fail(description, divId, "Select "+ testData, testData + " is NOT FOUND \n "+e);
+		}
+		
+		return spanValue;
+
+	}
+	
+	/**
+	 * Find element by Web Element
+	 * @param by
+	 * @return
+	 */
+	public boolean retryingFindClick(By by) {
+        boolean result = false;
+        int attempts = 0;
+        while(attempts < 2) {
+            try {
+                driver.findElement(by).click();
+                result = true;
+                break;
+            } catch(StaleElementReferenceException e) {
+            }
+            attempts++;
+        }
+        return result;
+	}
+	
+	/**
+	 * Find element by Web Element
+	 * @param by
+	 * @return
+	 */
+	public static String doubleClickOnRowOfATable(String tableId, int colNum, String matchedString) {
+		String custName = "";
+		try {
+			System.out.println("Double click on the Row of Table :- " + tableId);
+			WebElement division = driver.findElement(By.id(tableId));
+			WebElement tBody = division.findElement(By.tagName("tbody"));
+			List<WebElement> allRows = tBody.findElements(By.tagName("tr"));
+			for (WebElement row : allRows) {
+				System.out.println(row.getTagName());
+
+				List<WebElement> cells = row.findElements(By.tagName("td"));
+				String cellContents = cells.get(colNum).getText();
+				if (cellContents.equals(matchedString)) {
+					custName = cellContents;
+					System.out.println("Customer Name :- " + custName);
+					UIMethods.doubleClickbyWebElement(row, "Double Click to select the customer", "Customer Selected");
+					Report.fail("Double click on the row of a table", matchedString, "Clicked Successfully",
+							"Object Found");
+					break;
+				}
+			}
+		} catch (Exception e) {
+			Report.fail("Double click on the row of a table", matchedString, "Clicked Successfully",
+					"Object Not found");
+		}
+		return custName;
+
+	}
+	
+	/**
+	 * Search the webelement by text and click on it
+	 * @param buttonText
+	 * @param description
+	 * @param testData
+	 * @param elementName
+	 */
+	public static void clickByWebelementText(String buttonText, String description, String testData,
+			String elementName) {
+		System.out.println("Element " + elementName + " having text " + testData + " To be clicked");
+
+		List<WebElement> allButtons;
+		boolean flag = false;
+		try {
+			allButtons = driver.findElements(By.tagName(elementName));
+			for (WebElement button : allButtons) {
+				System.out.println(button.getText());
+				// System.out.println(button.getText());
+				if (button.getText().equals(buttonText)) {
+					button.click();
+					flag = true;
+					break;
+				}
+			}
+
+			if (flag == true)
+				Report.pass(description, buttonText, testData, "Button Found");
+			else
+				Report.fail(description, buttonText, testData, "Button Not Found");
+
+		} catch (Exception e) {
+			Report.fail(description, buttonText, testData, "Button Not Found");
+		}
+
+	}
+	
+	/**
+	 * Click on a button by its Name
+	 * @param element
+	 * @param buttonText
+	 * @param description
+	 * @param testData
+	 * @param buttonNumber
+	 */
+	public static void clickButtonByButtonText(WebElement element, String buttonText, String description,
+			String testData, int buttonNumber) {
+		List<WebElement> allButtons;
+		boolean flag = false;
+		int count = 1;
+		try {
+			allButtons = element.findElements(By.tagName("button"));
+			for (WebElement button : allButtons) {
+				System.out.println(button.getText());
+				if (button.getText().equals(buttonText)) {
+					if (count == buttonNumber) {
+						button.click();
+						flag = true;
+						break;
+					}
+					count++;
+				}
+			}
+
+			if (flag == true)
+				Report.pass(description, buttonText, testData, "Button Found");
+			else
+				Report.fail(description, buttonText, testData, "Button Not Found");
+
+		} catch (Exception e) {
+			Report.fail(description, buttonText, testData, "Button Not Found");
+		}
+
+	}
+	
+	/**
+	 * Get Number of buttons in the page using button Text
+	 * @param buttonText
+	 * @return
+	 */
+	public static int numberOfButtonByButtonText(String buttonText) {
+		List<WebElement> allButtons;
+		int count = 0;
+		
+		try {
+			allButtons = driver.findElements(By.tagName("button"));
+			
+			for (WebElement button : allButtons) {
+				// System.out.println(button.getText());
+				if (button.getText().equals(buttonText)) {
+
+					count++;
+				}
+			}
+
+			/*
+			 * if (flag == true) Report.pass(description + " Button available",
+			 * buttonText, testData); else Report.fail(description +
+			 * " Button not available", buttonText, testData);
+			 */
+
+		} catch (Exception e) {
+			Report.fail("Click button by button Text", buttonText, "Find Count of Buttons", "Button Not Found");
+		}
+		return count;
+
+	}
+
+	/**
+	 * Click on the button by button text
+	 * @param buttonText
+	 * @param description
+	 * @param testData
+	 * @param buttonNumber
+	 */
+	public static void clickButtonByButtonText(String buttonText, String description, String testData,
+			int buttonNumber) {
+		List<WebElement> allButtons;
+		int count = 1;
+		boolean flag = false;
+		try {
+			allButtons = driver.findElements(By.tagName("button"));
+			/*
+			 * for (WebElement button : allButtons) {
+			 * System.out.println(button.getText()); }
+			 */
+			for (WebElement button : allButtons) {
+				// System.out.println(button.getText());
+				if (button.getText().equals(buttonText)) {
+					// System.out.println(button.getText());
+					if (count == buttonNumber) {
+						button.click();
+						flag = true;
+						break;
+					}
+					count++;
+				}
+			}
+
+			if (flag == true)
+				Report.pass(description, buttonText, testData, "Button Found");
+			else
+				Report.fail("Click button by button Text", buttonText, "Find Count of Buttons", "Button Not Found");
+
+		} catch (Exception e) {
+			Report.fail("Click button by button Text", buttonText, "Find Count of Buttons", "Button Not Found");
+		}
+
+	}
+	
+	/**
+	 * Scrolling down to the page End
+	 */
+	public static void ScrollDownEnd() {
+		try {
+			Robot robot = new Robot();
+			robot.keyPress(java.awt.event.KeyEvent.VK_END);
+			robot.keyRelease(java.awt.event.KeyEvent.VK_END);
+			Thread.sleep(3000);
+		} catch (Exception e) {
+			Report.fail("Error: " + e, "Nil", "Nil", "Nil");
+		}
+	}
+
+
+}
